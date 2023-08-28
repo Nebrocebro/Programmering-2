@@ -1,0 +1,15 @@
+# skål1 = set()
+# skål2 = set()
+skål1 = {'Banan', 'Päron', 'Äpple'}
+skål2 = {'Kiwi', 'Ananas', 'Päron'}
+# skål1.add("Banan")
+# skål1.add("Päron")
+# skål1.add("Äpple")
+# skål2.add("Kiwi")
+# skål2.add("Ananas")
+# skål2.add("Päron")
+print(skål1)
+print(skål2)
+dubbelskål = skål1.union(skål2)
+print(dubbelskål)
+print(f'Det finns {len(dubbelskål)} stycken element kvar efter union().')
