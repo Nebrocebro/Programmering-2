@@ -6,6 +6,8 @@ racelistheader = StringVar(root)
 racelistheader.set("Choose Race") # default value
 
 racelist = OptionMenu(root, racelistheader, "Choose Race", "Human", "Orc", "Dwarf", "Elf", "Wizard")
+def click_handler(self):
+    race = str("")
 racelist.pack()
 nameentry = Entry(root)
 nameentry.pack
