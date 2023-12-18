@@ -1,6 +1,7 @@
 * {
     margin: 0;
     padding: 0;
+    font-family: Rowdies, sans-serif;
 }
 
 html,
@@ -14,7 +15,7 @@ html {
 
 body {
     width: 100%;
-    background: linear-gradient(315deg, #2a2a72 0%, #009ffd 74%);
+    background: linear-gradient(315deg, #682a72 0%, #6100fd 74%);
     /* height: 100%;
     box-sizing: border-box;
     -moz-box-sizing: border-box;
@@ -32,14 +33,46 @@ body {
     border: 10px solid whitesmoke
 } */
 
+.mainContainer {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    width: 100%;
+    height: fit-content;
+    background: linear-gradient(315deg, #2a2a72 0%, #009ffd 74%);
+    margin-top: 5vh;
+    border-radius: 2.5vw;
+}
 nav {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 7.5vh;
+    height: 10vh;
+        box-shadow: 0px 20px 20px rgba(0, 0, 0, 0.4);
+    }
+    
+    .industryContainer {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        width: 20vw;
+        height: fit-content;
+        padding-top: 20px;
+        padding-bottom: 20px;
     box-shadow: 0px 20px 20px rgba(0, 0, 0, 0.4);
+    margin-top: 2vh;
+        margin-bottom: 2vh;
+        background-color: #D21F3C;
+        border-radius: 1vw;
+    }
+    
+    .profitCounter {
+        width: fit-content;
+        margin-top: 1vh;
+        margin-bottom: 1vh;
 }
 
 #title {
-    font-size: 2vw;
+    font-size: 2.5vw;
+        color: whitesmoke;
 }
