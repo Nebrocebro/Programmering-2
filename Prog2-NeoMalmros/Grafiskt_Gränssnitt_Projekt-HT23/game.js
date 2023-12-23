@@ -1,5 +1,45 @@
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
+class AngelSystem {
+  constructor() {
+    this.points = 0;
+    this.baseProfitBoost = 0.02; // 2%
+    this.multiplier = 1;
+  }
+
+  calculatePoints(industry) {
+    const contributionMap = {
+      Farm: 1,
+      Forest: 2,
+      Fishing: 3,
+      Mining: 4,
+    };
+
+    const contribution = contributionMap[industry.industryName];
+    return isNaN(contribution) ? 0 : (industry.bank / 1e12) * contribution;
+  }
+
+  updatePoints(industryList) {
+    this.points = industryList.reduce((totalPoints, industry) => {
+      return totalPoints + this.calculatePoints(industry);
+    }, 0);
+
+    this.points = isNaN(this.points) ? 0 : this.points;
+
+    this.multiplier = Math.pow(10, Math.floor(Math.log10(this.points)));
+  }
+
+  applyProfitBoost(industryList) {
+    const profitBoost = this.points * this.baseProfitBoost;
+
+    industryList.forEach((industry) => {
+      industry.buildingList.forEach((building) => {
+        building.profit *= 1 + profitBoost;
+      });
+    });
+  }
+}
+
 class Industry {
   constructor(
     industryName,
@@ -16,16 +56,8 @@ class Industry {
     this.bank = bank;
     this.resourceName = resourceName;
     this.unlockCost = unlockCost;
-    this.buildingList = buildingList;
+    this.buildingList = buildingList || [];
   }
-  checkFirst = function () {
-    if (this.isFirst == true) {
-      this.isUnlocked = true;
-      this.unlockCost = 0;
-    } else {
-      this.isUnlocked = false;
-    }
-  };
 }
 
 class Building {
@@ -38,63 +70,149 @@ class Building {
   }
 }
 
-class Manager {}
+function createBuildingContainer(building, industry) {
+  var buildingContainer = document.createElement("div");
+  buildingContainer.classList.add(
+    "building",
+    `${building.name.replace(/\s+/g, "_")}Building`
+  );
+  buildingContainer.id = building.name;
+  buildingContainer.dataset.instance = JSON.stringify(building);
+  buildingContainer.insertAdjacentHTML(
+    "beforeend",
+    `<p>${building.name}</p>
+     <p>Amount: <span class="amount">${building.amount}</span></p>
+     <p>Profit: <span class="profit">${building.profit}</span></p>
+     <p>Cost: ${building.cost}</p>
+     <button class="buyButton">Buy</button>`
+  );
+
+  var buyButton = buildingContainer.querySelector(".buyButton");
+  buyButton.addEventListener("click", function () {
+    Buy(building, industry);
+  });
+
+  return buildingContainer;
+}
+
+function createIndustryContainer(industry) {
+  var industryContainer = document.createElement("div");
+  industryContainer.classList.add("industryContainer");
+  industryContainer.id = `${industry.industryName.replace(
+    /\s+/g,
+    "_"
+  )}Industry`;
+  industryContainer.dataset.instance = JSON.stringify(industry);
+
+  var header = document.createElement("div");
+  header.classList.add("industryHeader");
+  industryContainer.appendChild(header);
+
+  if (!industry.isUnlocked) {
+    var unlockButton = document.createElement("button");
+    unlockButton.textContent = "Unlock";
+    unlockButton.addEventListener("click", function () {
+      unlockIndustry(industry);
+    });
+    header.appendChild(unlockButton);
+
+    header.insertAdjacentHTML(
+      "beforeend",
+      `<p>Unlock Cost: ${industry.unlockCost}</p>`
+    );
+  }
+
+  if (industry.buildingList) {
+    for (var m = 0; m < industry.buildingList.length; m++) {
+      var buildingContainer = createBuildingContainer(
+        industry.buildingList[m],
+        industry
+      );
+      industryContainer.appendChild(buildingContainer);
+    }
+  }
+
+  return industryContainer;
+}
+
+function appendIndustryContainers() {
+  var mainContainer = document.getElementById("mainContainer");
+  if (mainContainer) {
+    for (var l = 0; l < industryList.length; l++) {
+      var industryContainer = createIndustryContainer(industryList[l]);
+      mainContainer.appendChild(industryContainer);
+    }
+  } else {
+    console.error("Main container not found");
+  }
+}
 
 function startGame() {
   isRunning = true;
-  buyCoef = 0;
-  j = 0;
-  START_SPEED = 5;
+  const farmBuildings = [
+    new Building("Farmers", 2, 1, 10, "Farm"),
+    new Building("Tractors", 3, 0, 1000, "Farm"),
+    new Building("Fields", 9, 0, 100000, "Farm"),
+    new Building("Silos", 15, 0, 1000000, "Farm"),
+    new Building("Farms", 10, 0, 10000000000, "Farm"),
+  ];
+
+  const forestBuildings = [
+    new Building("Lumberjacks", 3, 1, 10, "Forest"),
+    new Building("Sawmills", 3, 0, 1000, "Forest"),
+    new Building("Tree Plantations", 9, 0, 1000000, "Forest"),
+    new Building("Logging Camps", 15, 0, 10000000, "Forest"),
+    new Building("Forest Gods", 10, 0, 100000000000, "Forest"),
+  ];
+
+  const fishingBuildings = [
+    new Building("Fishing Boats", 4, 1, 10, "Fishing"),
+    new Building("Fish Farms", 3, 0, 10000, "Fishing"),
+    new Building("Harpoon Cannons", 9, 0, 100000, "Fishing"),
+    new Building("Seafood Processing Plants", 15, 0, 10000000, "Fishing"),
+    new Building("Atlantis Submarine", 10, 0, 10000000000, "Fishing"),
+  ];
+
+  const miningBuildings = [
+    new Building("Miners", 6, 1, 100, "Mining"),
+    new Building("Quarries", 3, 0, 1000, "Mining"),
+    new Building("Drilling Rigs", 9, 0, 1000000, "Mining"),
+    new Building("Refineries", 15, 0, 1000000, "Mining"),
+    new Building("Asteroid Mines", 10, 0, 1000000000, "Mining"),
+  ];
+
   industryList = [
-    (FarmInd = new Industry("Farm", "Potato", 0, true, true, 0, [
-      new Building("Farmers", 4, 1, 10, "Farm"),
-      new Building("Tractors", 3, 0, 1000, "Farm"),
-      new Building("Fields", 9, 0, 100000, "Farm"),
-      new Building("Silos", 15, 0, 1000000, "Farm"),
-      new Building("Farms", 10, 0, 1000000000, "Farm"),
-    ])),
-    (ForInd = new Industry("Forest", "Wood", 0, false, false, 10000)),
-    (FishInd = new Industry("Fishing", "Fish", 0, false, false, 1000000)),
+    (FarmInd = new Industry("Farm", "Potato", 0, true, true, 0, farmBuildings)),
+    (ForInd = new Industry(
+      "Forest",
+      "Wood",
+      0,
+      false,
+      false,
+      10000,
+      forestBuildings
+    )),
+    (FishInd = new Industry(
+      "Fishing",
+      "Fish",
+      0,
+      false,
+      false,
+      1000000,
+      fishingBuildings
+    )),
     (MineInd = new Industry(
       "Mining",
       "Rare Minerals",
       0,
       false,
       false,
-      1000000000
+      1000000000,
+      miningBuildings
     )),
   ];
 
-  for (l = 0; l < industryList.length; l++) {
-    var mainContainer = document.getElementsByClassName("mainContainer");
-    var industryBox = document.createElement("div");
-    industryBox.classList.add("industryContainer");
-    industryBox.id = industryList[l].industryName + "Industry";
-    for (m = 0; m < industryList[l].buildingList.length; m++) {
-      var building = document.createElement("div");
-      building.classList.add(
-        "building",
-        `${Industry.industryName + "Building"}`
-      );
-      building.id = `${industryList[l].buildingList[m].name}`;
-      industryBox.appendChild(building);
-    }
-    mainContainer.appendChild(industryBox);
-  }
-
-  totalAngels = 0; // Prestige percentage multipliers, 1 angel = 2% (0.02x) base bonus
-  // Varje industri ger änglar, men olika mycket, typ som comrades i AdCom, tex. farm ger 0.1 änglar per "krävd summa" och mining ger 2
-  // (krävd summa som ökar exponentiellt, sök upp adcap how do i get angels och math geeks formula)
-}
-
-function buyAmount() {
-  percentList = [0, 0.01, 0.1, 0.5, 1];
-  buyCoef = percentList[j];
-  if (j < percentList.length) {
-    j++;
-  } else {
-    j = 0;
-  }
+  appendIndustryContainers();
 }
 
 function Buy(Building, Industry) {
@@ -102,36 +220,119 @@ function Buy(Building, Industry) {
     (Building.industry = Industry.industryName) &&
     Industry.bank >= Building.cost
   ) {
-    Building.amount += Math.floor(buyCoef * (Industry.bank / Building.cost));
+    Industry.bank -= Building.cost;
+    Building.amount += 1;
+    updateBuildingDisplay(Building);
   } else {
     console.log("Du har inte råd!");
   }
 }
 
-function gameLoop(Industry) {
-  // kanske göra en loop så att den bara kollar varje industri i listan, då förenklas unlockCost delen nedan
+function unlockIndustry(industry) {
+  const precedingIndustry = getPrecedingIndustry(industry);
+
+  if (precedingIndustry && precedingIndustry.bank >= industry.unlockCost) {
+    industry.isUnlocked = true;
+    updateIndustryHeader(industry);
+    updateIndustryHeader(precedingIndustry);
+  } else {
+    console.log("Du har inte råd med industrin! Fortsätt jobba på!");
+  }
+}
+
+function getPrecedingIndustry(industry) {
+  const industryIndex = industryList.findIndex((i) => i === industry);
+  if (industryIndex > 0) {
+    return industryList[industryIndex - 1];
+  }
+  return null;
+}
+
+async function gameLoop(angelSystem) {
   while (isRunning) {
-    earnings_this_round = START_SPEED;
-    for (let i = 0; i < powerUps.length; i++) {
-      const powerUp = powerUps[i];
-      earnings_this_round = powerUp.speed * earnings_this_round;
-    }
-    Industry.bank += earnings_this_round;
+    for (let i = 0; i < industryList.length; i++) {
+      const currentIndustry = industryList[i];
+      const buildingList = currentIndustry.buildingList || [];
 
-    // console.log(totalResource); Visa upp i sidan
-
-    if (industryList.index(Industry) < industryList.length) {
       if (
-        Industry.bank >=
-        industryList[industryList.index(Industry + 1)].unlockCost
+        buildingList &&
+        buildingList.length > 0 &&
+        currentIndustry.isUnlocked
       ) {
-        console.log("Du har nu råd med nästa industri!");
+        for (let j = 1; j < buildingList.length; j++) {
+          const currentBuilding = buildingList[j];
+          const previousBuilding = buildingList[j - 1];
+
+          const profit = currentBuilding.profit * previousBuilding.amount;
+          currentIndustry.bank += profit;
+
+          const generatedAmount = Math.floor(profit / currentBuilding.cost);
+          previousBuilding.amount += generatedAmount;
+          updateBuildingDisplay(previousBuilding);
+        }
+
+        const firstBuilding = buildingList[0];
+        currentIndustry.bank += firstBuilding.profit * firstBuilding.amount;
+        updateBuildingDisplay(firstBuilding);
       }
-    } else {
-      continue;
+
+      updateIndustryHeader(currentIndustry);
+    }
+
+    angelSystem.updatePoints(industryList);
+    angelSystem.applyProfitBoost(industryList);
+
+    await sleep(1000);
+  }
+}
+
+function updateBuildingDisplay(building) {
+  var buildingContainer = document.getElementById(building.name);
+  var amountElement = buildingContainer.querySelector(".amount");
+  var profitElement = buildingContainer.querySelector(".profit");
+
+  amountElement.textContent = building.amount;
+  profitElement.textContent = building.profit;
+}
+
+function updateIndustryHeader(industry) {
+  var industryContainer = document.getElementById(
+    `${industry.industryName.replace(/\s+/g, "_")}Industry`
+  );
+
+  if (industryContainer) {
+    var header = industryContainer.querySelector(".industryHeader");
+
+    if (header) {
+      header.innerHTML = `<p>Bank: ${industry.bank}</p>
+                          <p>Profit Rate: ${industry.buildingList[0].profit}</p>`;
+
+      if (!industry.isUnlocked) {
+        var unlockButton = header.querySelector(".buyButton");
+        if (!unlockButton) {
+          unlockButton = document.createElement("button");
+          unlockButton.textContent = "Unlock";
+          unlockButton.classList.add("buyButton");
+          unlockButton.addEventListener("click", function () {
+            unlockIndustry(industry);
+          });
+
+          header.insertAdjacentHTML(
+            "beforeend",
+            `<p class="unlockCost excludeGreyOut">Unlock Cost: ${industry.unlockCost}</p>`
+          );
+
+          header.appendChild(unlockButton);
+        }
+
+        industryContainer.classList.add("lockedIndustry");
+      } else {
+        industryContainer.classList.remove("lockedIndustry");
+      }
     }
   }
 }
 
+const angelSystem = new AngelSystem();
 startGame();
-gameLoop();
+gameLoop(angelSystem);
