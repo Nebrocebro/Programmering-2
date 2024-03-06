@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- inkluderar socket.io i sidan -->
+    <script src="/socket.io/socket.io.js"></script>
+    <title>Socket.io</title>
+  </head>
+  <body>
+    <form action="">
+        <input id="msg1" type="text" value="Namn"/>
+        <input id="msg2" type="text" value="Efternamn"/>
+        <input id="msg3" type="text" value="Favoritspel"/>
+        <button onclick="collect();">Submit</button>
+    </form>
+  </body>
+  <script>
+    const socket = io() // Skapar en socket med en koppling till servern.
+    collect = function () {
+      var msg1 = document.getElementById("msg1").value
+      var msg2 = document.getElementById("msg2").value
+      var msg3 = document.getElementById("msg3").value
+      socket.emit("msg1", msg1) // Emittar "skickar" något till servern.
+      socket.emit("msg2", msg2) 
+      socket.emit("msg3", msg3) 
+    }
+  </script>
+</html>
